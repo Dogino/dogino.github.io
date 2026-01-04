@@ -1,287 +1,346 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Insta Smokes</title>
 
 <style>
-    body {
-        margin: 0;
-        padding: 10px;
-        background: #0e0e0e;
-        color: #fff;
-        font-family: Arial, sans-serif;
-    }
+  body{
+    margin:0;
+    padding:10px;
+    background:#0e0e0e;
+    color:#fff;
+    font-family: Arial, sans-serif;
+  }
+  .wrapper{
+    max-width:900px;
+    margin:0 auto;
+    text-align:center;
+  }
 
-    .wrapper {
-        max-width: 900px;
-        margin: 0 auto;
-        text-align: center;
-    }
+  .links a, .links button{
+    display:block;
+    width:100%;
+    margin:8px 0;
+    padding:14px;
+    font-size:18px;
+    font-weight:700;
+    background:#1b1b1b;
+    color:#fff;
+    text-decoration:none;
+    border:0;
+    border-radius:6px;
+    cursor:pointer;
+  }
+  .links a:hover, .links button:hover{
+    background:#00bcd4;
+    color:#000;
+  }
 
-    .links a {
-        display: block;
-        margin: 8px 0;
-        padding: 14px;
-        font-size: 18px;
-        font-weight: bold;
-        background: #1b1b1b;
-        color: #fff;
-        text-decoration: none;
-        border-radius: 6px;
-        cursor: pointer;
-    }
+  .dual{
+    display:flex;
+    gap:8px;
+    margin:8px 0;
+  }
+  .dual button{
+    flex:1;
+    margin:0;
+  }
 
-    .links a:hover {
-        background: #00bcd4;
-        color: #000;
-    }
+  .image-box{
+    margin-top:12px;
+    display:none;
+    overflow:hidden;
+    max-height:75vh;
+    background:#000;
+    border-radius:6px;
+    cursor:zoom-in;
+  }
+  .image-box.zoomed{ cursor:grab; }
 
-    .dual {
-        display: flex;
-        gap: 8px;
-        margin: 8px 0;
-    }
-    .dual a {
-        flex: 1;
-        margin: 0;
-    }
+  .image-box img{
+    width:100%;
+    display:block;
+    user-select:none;
+    -webkit-user-drag:none;
+    transform-origin:0 0;
+    transition:transform .05s linear;
+  }
 
-    /* Area immagine */
-    .image-box {
-        margin-top: 12px;
-        display: none;
-        overflow: hidden;
-        max-height: 75vh;
-        background: #000;
-        border-radius: 6px;
-        cursor: zoom-in;
-    }
-    .image-box.zoomed {
-        cursor: grab;
-    }
+  .hint{
+    margin-top:6px;
+    font-size:12px;
+    color:#aaa;
+  }
 
-    .image-box img {
-        width: 100%;
-        user-select: none;
-        -webkit-user-drag: none; /* blocca drag ghost su Chrome/Steam */
-        transform-origin: 0 0;
-        transition: transform 0.05s linear;
-        display: block;
-    }
+  .external{
+    margin-top:12px;
+  }
+  .external a, .external button{
+    display:inline-block;
+    margin:5px;
+    padding:10px 14px;
+    font-size:14px;
+    background:#2a2a2a;
+    color:#ccc;
+    text-decoration:none;
+    border:0;
+    border-radius:5px;
+    cursor:pointer;
+  }
+  .external a:hover, .external button:hover{
+    background:#444;
+    color:#fff;
+  }
 
-    .hint {
-        margin-top: 6px;
-        font-size: 12px;
-        color: #aaa;
-    }
-
-    .external {
-        margin-top: 12px;
-    }
-    .external a {
-        display: inline-block;
-        margin: 5px;
-        padding: 10px 14px;
-        font-size: 14px;
-        background: #2a2a2a;
-        color: #ccc;
-        text-decoration: none;
-        border-radius: 5px;
-    }
-    .external a:hover {
-        background: #444;
-        color: #fff;
-    }
+  /* Popup inline */
+  .popup-backdrop{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.65);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:12px;
+    z-index:9999;
+  }
+  .popup{
+    width:min(520px, 95vw);
+    background:#141414;
+    border-radius:10px;
+    overflow:hidden;
+    box-shadow:0 0 40px rgba(0,0,0,.6);
+    text-align:center;
+  }
+  .popup img{
+    width:100%;
+    display:block;
+    user-select:none;
+    -webkit-user-drag:none;
+  }
+  .popup .content{
+    padding:14px;
+  }
+  .popup .content h3{
+    margin:0 0 12px 0;
+    font-size:18px;
+  }
+  .popup .actions{
+    display:flex;
+    gap:10px;
+    justify-content:center;
+    padding:0 14px 14px 14px;
+  }
+  .popup .actions button{
+    flex:1;
+    padding:12px 10px;
+    border:0;
+    border-radius:8px;
+    font-weight:700;
+    cursor:pointer;
+    background:#2a2a2a;
+    color:#fff;
+  }
+  .popup .actions button:hover{
+    background:#00bcd4;
+    color:#000;
+  }
 </style>
 
 <script>
-let zoomed = false;
-let isDragging = false;
-let moved = false;
+  // --- viewer (zoom + pan + wheel) ---
+  let zoomed=false, isDragging=false, moved=false;
+  let startX=0, startY=0;
+  let translateX=0, translateY=0;
+  let scale=1;
+  const MIN_SCALE=1, MAX_SCALE=4, ZOOM_STEP=0.2;
 
-let startX = 0, startY = 0;
-let translateX = 0, translateY = 0;
+  function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
 
-let scale = 1;
-const MIN_SCALE = 1;
-const MAX_SCALE = 4;
-const ZOOM_STEP = 0.2;
-
-function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
-
-function applyTransform() {
-    const img = document.getElementById("mainImage");
+  function applyTransform(){
+    const img=document.getElementById("mainImage");
     img.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
-}
+  }
 
-function resetView() {
-    translateX = 0;
-    translateY = 0;
-    scale = 1;
-    zoomed = false;
-    document.getElementById("imageBox").classList.remove("zoomed");
-    document.getElementById("imageBox").style.cursor = "zoom-in";
+  function resetView(){
+    translateX=0; translateY=0; scale=1; zoomed=false;
+    const box=document.getElementById("imageBox");
+    box.classList.remove("zoomed");
+    box.style.cursor="zoom-in";
     applyTransform();
-}
+  }
 
-function showImage(src) {
-    const box = document.getElementById("imageBox");
-    const img = document.getElementById("mainImage");
+  function showImage(src){
+    const box=document.getElementById("imageBox");
+    const img=document.getElementById("mainImage");
+    img.src=src;
 
-    img.src = src;
-
-    isDragging = false;
-    moved = false;
+    isDragging=false; moved=false;
     resetView();
+    box.style.display="block";
+  }
 
-    box.style.display = "block";
-}
-
-function toggleZoom() {
-    // se hai appena trascinato, non toggle
-    if (moved) { moved = false; return; }
-
-    const box = document.getElementById("imageBox");
-
-    zoomed = !zoomed;
-
-    if (!zoomed) {
-        scale = 1;
-        translateX = translateY = 0;
-        box.classList.remove("zoomed");
-        box.style.cursor = "zoom-in";
+  function toggleZoom(){
+    if(moved){ moved=false; return; }
+    const box=document.getElementById("imageBox");
+    zoomed=!zoomed;
+    if(!zoomed){
+      scale=1; translateX=0; translateY=0;
+      box.classList.remove("zoomed");
+      box.style.cursor="zoom-in";
     } else {
-        scale = 2; // zoom base
-        box.classList.add("zoomed");
-        box.style.cursor = "grab";
+      scale=2;
+      box.classList.add("zoomed");
+      box.style.cursor="grab";
     }
-
     applyTransform();
-}
+  }
 
-function startDrag(e) {
-    if (!zoomed) return;
-
+  function startDrag(e){
+    if(!zoomed) return;
     e.preventDefault();
-    isDragging = true;
-    moved = false;
-
+    isDragging=true; moved=false;
     startX = e.clientX - translateX;
     startY = e.clientY - translateY;
+    document.getElementById("imageBox").style.cursor="grabbing";
+  }
 
-    document.getElementById("imageBox").style.cursor = "grabbing";
-}
-
-function drag(e) {
-    if (!isDragging || !zoomed) return;
-
+  function drag(e){
+    if(!isDragging || !zoomed) return;
     e.preventDefault();
-    moved = true;
-
+    moved=true;
     translateX = e.clientX - startX;
     translateY = e.clientY - startY;
-
     applyTransform();
-}
+  }
 
-function endDrag() {
-    isDragging = false;
-    const box = document.getElementById("imageBox");
+  function endDrag(){
+    isDragging=false;
+    const box=document.getElementById("imageBox");
     box.style.cursor = zoomed ? "grab" : "zoom-in";
-}
+  }
 
-// Zoom con rotellina: zooma verso il punto del mouse
-function wheelZoom(e) {
-    const box = document.getElementById("imageBox");
-    const img = document.getElementById("mainImage");
-
-    // se l'immagine non è visibile, niente
-    if (box.style.display === "none") return;
+  function wheelZoom(e){
+    const box=document.getElementById("imageBox");
+    if(box.style.display==="none") return;
 
     e.preventDefault();
 
-    // se non sei in zoom mode, entra in zoom mode al primo scroll
-    if (!zoomed) {
-        zoomed = true;
-        box.classList.add("zoomed");
-        box.style.cursor = "grab";
-        scale = 1.6;
+    if(!zoomed){
+      zoomed=true;
+      box.classList.add("zoomed");
+      box.style.cursor="grab";
+      scale=1.6;
     }
 
     const rect = box.getBoundingClientRect();
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
 
-    // coordinate del mouse rispetto al contenuto trasformato
     const preX = (mouseX - translateX) / scale;
     const preY = (mouseY - translateY) / scale;
 
-    // delta zoom
     const dir = (e.deltaY < 0) ? 1 : -1;
     const newScale = clamp(scale + dir * ZOOM_STEP, MIN_SCALE, MAX_SCALE);
 
-    // aggiorna translate per mantenere il punto sotto il mouse fermo
     translateX = mouseX - preX * newScale;
     translateY = mouseY - preY * newScale;
     scale = newScale;
 
-    // se torni a 1, esci da zoom mode
-    if (scale === 1) {
-        zoomed = false;
-        box.classList.remove("zoomed");
-        box.style.cursor = "zoom-in";
-        translateX = translateY = 0;
+    if(scale === 1){
+      zoomed=false;
+      box.classList.remove("zoomed");
+      box.style.cursor="zoom-in";
+      translateX=0; translateY=0;
     }
-
     applyTransform();
-}
+  }
 
-window.addEventListener("DOMContentLoaded", () => {
-    const img = document.getElementById("mainImage");
-    // blocca dragstart nativo
-    img.addEventListener("dragstart", (e) => e.preventDefault());
+  // --- faceit popup logic ---
+  function openFaceitPopup(){
+    document.getElementById("popupBackdrop").style.display="flex";
+  }
+  function closeFaceitPopup(){
+    document.getElementById("popupBackdrop").style.display="none";
+  }
+  function faceitYes(){
+    closeFaceitPopup();
+    window.open("https://www.faceit.com", "_blank");
+  }
+  function faceitNo(){
+    closeFaceitPopup();
+    window.open("https://www.twitch.tv/hitantv", "_blank");
+  }
 
-    const box = document.getElementById("imageBox");
-    // rotellina su box
-    box.addEventListener("wheel", wheelZoom, { passive: false });
-});
+  window.addEventListener("DOMContentLoaded", ()=>{
+    const img=document.getElementById("mainImage");
+    img.addEventListener("dragstart", (e)=>e.preventDefault());
+
+    const box=document.getElementById("imageBox");
+    box.addEventListener("wheel", wheelZoom, {passive:false});
+
+    // chiudi popup cliccando fuori
+    document.getElementById("popupBackdrop").addEventListener("click", (e)=>{
+      if(e.target.id === "popupBackdrop") closeFaceitPopup();
+    });
+
+    // ESC chiude popup
+    document.addEventListener("keydown", (e)=>{
+      if(e.key === "Escape") closeFaceitPopup();
+    });
+  });
 </script>
 </head>
 
 <body>
 <div class="wrapper">
 
-    <div class="links">
-        <a onclick="showImage('img/mirage.jpg')">INSTA SMOKES PER MIRAGE</a>
+  <div class="links">
+    <button type="button" onclick="showImage('img/mirage.jpg')">INSTA SMOKES PER MIRAGE</button>
 
-        <div class="dual">
-            <a onclick="showImage('img/ancient_ct.jpg')">ANCIENT PER CT</a>
-            <a onclick="showImage('img/ancient_t.jpg')">ANCIENT PER T</a>
-        </div>
-
-        <a onclick="showImage('img/inferno.jpg')">INSTA SMOKES PER INFERNO</a>
-        <a onclick="showImage('img/overpass.jpg')">INSTA SMOKES PER OVERPASS</a>
+    <div class="dual">
+      <button type="button" onclick="showImage('img/ancient_ct.jpg')">ANCIENT PER CT</button>
+      <button type="button" onclick="showImage('img/ancient_t.jpg')">ANCIENT PER T</button>
     </div>
 
-    <div id="imageBox" class="image-box"
-         onclick="toggleZoom()"
-         onmousedown="startDrag(event)"
-         onmousemove="drag(event)"
-         onmouseup="endDrag()"
-         onmouseleave="endDrag()">
-        <img id="mainImage" src="" alt="Insta Smoke" draggable="false">
-    </div>
+    <button type="button" onclick="showImage('img/inferno.jpg')">INSTA SMOKES PER INFERNO</button>
+    <button type="button" onclick="showImage('img/overpass.jpg')">INSTA SMOKES PER OVERPASS</button>
+  </div>
 
-    <div class="hint">
-        Click = zoom ON/OFF • Rotellina = zoom preciso • Trascina (solo zoom) = sposta
-    </div>
+  <div id="imageBox" class="image-box"
+       onclick="toggleZoom()"
+       onmousedown="startDrag(event)"
+       onmousemove="drag(event)"
+       onmouseup="endDrag()"
+       onmouseleave="endDrag()">
+    <img id="mainImage" src="" alt="Insta Smoke" draggable="false">
+  </div>
 
-    <div class="external">
-        <a href="https://www.google.de" target="_blank">google.de</a>
-        <a href="https://www.faceit.com" target="_blank">faceit.com</a>
-    </div>
+  <div class="hint">
+    Click = zoom ON/OFF • Rotellina = zoom • Trascina (solo zoom) = sposta
+  </div>
+
+  <div class="external">
+    <a href="https://www.google.de" target="_blank" rel="noopener">GUGOL (no AWUPA)</a>
+    <button type="button" onclick="openFaceitPopup()">FEISIT</button>
+  </div>
 
 </div>
+
+<!-- Popup -->
+<div id="popupBackdrop" class="popup-backdrop" aria-hidden="true">
+  <div class="popup" role="dialog" aria-modal="true" aria-label="Conferma Faceit">
+    <img src="img/pain.jpg" alt="pain" draggable="false">
+    <div class="content">
+      <h3>Vuoi aprire veramente feisit? Bro?</h3>
+    </div>
+    <div class="actions">
+      <button type="button" onclick="faceitYes()">SÌ</button>
+      <button type="button" onclick="faceitNo()">NO</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
