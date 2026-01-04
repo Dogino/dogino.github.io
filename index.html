@@ -8,7 +8,7 @@
 <style>
   body{
     margin:0;
-    padding:10px;
+    padding:12px;
     background:#0e0e0e;
     color:#fff;
     font-family: Arial, sans-serif;
@@ -19,37 +19,38 @@
     text-align:center;
   }
 
-  .links a, .links button{
+  /* ===== MAP BUTTONS ===== */
+  .links button{
     display:block;
     width:100%;
-    margin:8px 0;
-    padding:14px;
-    font-size:18px;
+    margin:10px 0;
+    padding:16px;
+    font-size:20px;            /* ↑ testo */
     font-weight:700;
     background:#1b1b1b;
     color:#fff;
-    text-decoration:none;
     border:0;
     border-radius:6px;
     cursor:pointer;
   }
-  .links a:hover, .links button:hover{
+  .links button:hover{
     background:#00bcd4;
     color:#000;
   }
 
   .dual{
     display:flex;
-    gap:8px;
-    margin:8px 0;
+    gap:10px;
+    margin:10px 0;
   }
   .dual button{
     flex:1;
     margin:0;
   }
 
+  /* ===== IMAGE VIEWER ===== */
   .image-box{
-    margin-top:12px;
+    margin-top:14px;
     display:none;
     overflow:hidden;
     max-height:75vh;
@@ -69,32 +70,55 @@
   }
 
   .hint{
-    margin-top:6px;
-    font-size:12px;
+    margin-top:8px;
+    font-size:13px;            /* ↑ */
     color:#aaa;
   }
 
+  /* ===== BOTTOM BUTTONS ===== */
   .external{
-    margin-top:12px;
+    margin-top:16px;
+    display:flex;
+    gap:12px;
+    justify-content:center;
+    flex-wrap:wrap;
   }
-  .external a, .external button{
-    display:inline-block;
-    margin:5px;
-    padding:10px 14px;
-    font-size:14px;
+  .external a,
+  .external button{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    height:52px;               /* ↑ altezza */
+    padding:0 18px;
+    font-size:16px;            /* ↑ testo */
     background:#2a2a2a;
-    color:#ccc;
-    text-decoration:none;
+    color:#ddd;
     border:0;
-    border-radius:5px;
+    border-radius:6px;
     cursor:pointer;
   }
-  .external a:hover, .external button:hover{
+  .external a:hover,
+  .external button:hover{
     background:#444;
     color:#fff;
   }
 
-  /* Popup inline */
+  /* ===== IMAGE BUTTON (DOOR) ===== */
+  .img-button{
+    width:64px;                /* ↑ bottone */
+    height:52px;
+    padding:6px;
+  }
+  .img-button img{
+    width:100%;
+    height:100%;
+    object-fit:contain;
+    pointer-events:none;
+    user-select:none;
+    -webkit-user-drag:none;
+  }
+
+  /* ===== POPUP BASE ===== */
   .popup-backdrop{
     position:fixed;
     inset:0;
@@ -112,6 +136,7 @@
     overflow:hidden;
     box-shadow:0 0 40px rgba(0,0,0,.6);
     text-align:center;
+    border:2px solid transparent;
   }
   .popup img{
     width:100%;
@@ -120,23 +145,24 @@
     -webkit-user-drag:none;
   }
   .popup .content{
-    padding:14px;
+    padding:18px;
   }
   .popup .content h3{
-    margin:0 0 12px 0;
-    font-size:18px;
+    margin:0 0 14px 0;
+    font-size:20px;            /* ↑ popup text */
   }
   .popup .actions{
     display:flex;
-    gap:10px;
+    gap:12px;
     justify-content:center;
-    padding:0 14px 14px 14px;
+    padding:0 18px 18px 18px;
   }
   .popup .actions button{
     flex:1;
-    padding:12px 10px;
+    padding:14px 10px;
     border:0;
     border-radius:8px;
+    font-size:16px;            /* ↑ */
     font-weight:700;
     cursor:pointer;
     background:#2a2a2a;
@@ -146,53 +172,67 @@
     background:#00bcd4;
     color:#000;
   }
+
+  /* ===== SHAKE ===== */
+  @keyframes shake {
+    0%   { transform: translateX(0); }
+    12%  { transform: translateX(-10px); }
+    25%  { transform: translateX(10px); }
+    37%  { transform: translateX(-8px); }
+    50%  { transform: translateX(8px); }
+    62%  { transform: translateX(-6px); }
+    75%  { transform: translateX(6px); }
+    87%  { transform: translateX(-3px); }
+    100% { transform: translateX(0); }
+  }
+  .popup.shake{
+    animation: shake 0.45s ease;
+  }
+
+  /* ===== DOOR WARNING ===== */
+  .popup.door-warning{
+    border-color:#ff2b2b;
+    box-shadow:0 0 0 1px rgba(255,43,43,.35),
+               0 0 40px rgba(0,0,0,.7);
+  }
 </style>
 
 <script>
-  // --- viewer (zoom + pan + wheel) ---
+  /* === IMAGE VIEWER === */
   let zoomed=false, isDragging=false, moved=false;
-  let startX=0, startY=0;
-  let translateX=0, translateY=0;
-  let scale=1;
+  let startX=0, startY=0, translateX=0, translateY=0, scale=1;
   const MIN_SCALE=1, MAX_SCALE=4, ZOOM_STEP=0.2;
 
-  function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+  const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
 
   function applyTransform(){
-    const img=document.getElementById("mainImage");
-    img.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+    mainImage.style.transform =
+      `translate(${translateX}px,${translateY}px) scale(${scale})`;
   }
 
   function resetView(){
-    translateX=0; translateY=0; scale=1; zoomed=false;
-    const box=document.getElementById("imageBox");
-    box.classList.remove("zoomed");
-    box.style.cursor="zoom-in";
+    translateX=translateY=0; scale=1; zoomed=false;
+    imageBox.classList.remove("zoomed");
+    imageBox.style.cursor="zoom-in";
     applyTransform();
   }
 
   function showImage(src){
-    const box=document.getElementById("imageBox");
-    const img=document.getElementById("mainImage");
-    img.src=src;
-
-    isDragging=false; moved=false;
+    mainImage.src=src;
+    moved=false;
     resetView();
-    box.style.display="block";
+    imageBox.style.display="block";
   }
 
   function toggleZoom(){
     if(moved){ moved=false; return; }
-    const box=document.getElementById("imageBox");
     zoomed=!zoomed;
-    if(!zoomed){
-      scale=1; translateX=0; translateY=0;
-      box.classList.remove("zoomed");
-      box.style.cursor="zoom-in";
-    } else {
+    if(zoomed){
       scale=2;
-      box.classList.add("zoomed");
-      box.style.cursor="grab";
+      imageBox.classList.add("zoomed");
+      imageBox.style.cursor="grab";
+    }else{
+      resetView();
     }
     applyTransform();
   }
@@ -201,94 +241,72 @@
     if(!zoomed) return;
     e.preventDefault();
     isDragging=true; moved=false;
-    startX = e.clientX - translateX;
-    startY = e.clientY - translateY;
-    document.getElementById("imageBox").style.cursor="grabbing";
+    startX=e.clientX-translateX;
+    startY=e.clientY-translateY;
+    imageBox.style.cursor="grabbing";
   }
 
   function drag(e){
-    if(!isDragging || !zoomed) return;
+    if(!isDragging||!zoomed) return;
     e.preventDefault();
     moved=true;
-    translateX = e.clientX - startX;
-    translateY = e.clientY - startY;
+    translateX=e.clientX-startX;
+    translateY=e.clientY-startY;
     applyTransform();
   }
 
   function endDrag(){
     isDragging=false;
-    const box=document.getElementById("imageBox");
-    box.style.cursor = zoomed ? "grab" : "zoom-in";
+    imageBox.style.cursor=zoomed?"grab":"zoom-in";
   }
 
   function wheelZoom(e){
-    const box=document.getElementById("imageBox");
-    if(box.style.display==="none") return;
-
+    if(imageBox.style.display==="none") return;
     e.preventDefault();
+    if(!zoomed){ zoomed=true; scale=1.6; imageBox.classList.add("zoomed"); }
+    const r=imageBox.getBoundingClientRect();
+    const mx=e.clientX-r.left, my=e.clientY-r.top;
+    const px=(mx-translateX)/scale, py=(my-translateY)/scale;
+    scale=clamp(scale+(e.deltaY<0?ZOOM_STEP:-ZOOM_STEP),MIN_SCALE,MAX_SCALE);
+    translateX=mx-px*scale; translateY=my-py*scale;
+    if(scale===1) resetView(); else applyTransform();
+  }
 
-    if(!zoomed){
-      zoomed=true;
-      box.classList.add("zoomed");
-      box.style.cursor="grab";
-      scale=1.6;
+  /* === POPUPS === */
+  function openPopup(id,shake=false){
+    const b=document.getElementById(id);
+    b.style.display="flex";
+    if(shake){
+      const p=b.querySelector(".popup");
+      p.classList.remove("shake");
+      void p.offsetWidth;
+      p.classList.add("shake");
     }
-
-    const rect = box.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-
-    const preX = (mouseX - translateX) / scale;
-    const preY = (mouseY - translateY) / scale;
-
-    const dir = (e.deltaY < 0) ? 1 : -1;
-    const newScale = clamp(scale + dir * ZOOM_STEP, MIN_SCALE, MAX_SCALE);
-
-    translateX = mouseX - preX * newScale;
-    translateY = mouseY - preY * newScale;
-    scale = newScale;
-
-    if(scale === 1){
-      zoomed=false;
-      box.classList.remove("zoomed");
-      box.style.cursor="zoom-in";
-      translateX=0; translateY=0;
-    }
-    applyTransform();
   }
+  const closePopup=id=>document.getElementById(id).style.display="none";
 
-  // --- faceit popup logic ---
-  function openFaceitPopup(){
-    document.getElementById("popupBackdrop").style.display="flex";
-  }
-  function closeFaceitPopup(){
-    document.getElementById("popupBackdrop").style.display="none";
-  }
-  function faceitYes(){
-    closeFaceitPopup();
-    window.open("https://www.faceit.com", "_blank");
-  }
-  function faceitNo(){
-    closeFaceitPopup();
-    window.open("https://www.twitch.tv/hitantv", "_blank");
-  }
+  const openFaceitPopup=()=>openPopup("faceitPopupBackdrop");
+  const openEseapopup =()=>openPopup("eseaPopupBackdrop");
+  const openDoorPopup =()=>openPopup("doorPopupBackdrop",true);
 
-  window.addEventListener("DOMContentLoaded", ()=>{
-    const img=document.getElementById("mainImage");
-    img.addEventListener("dragstart", (e)=>e.preventDefault());
+  const faceitYes=()=>{closePopup("faceitPopupBackdrop");window.open("https://www.faceit.com","_blank");};
+  const faceitNo =()=>{closePopup("faceitPopupBackdrop");window.open("https://www.twitch.tv/hitantv","_blank");};
 
-    const box=document.getElementById("imageBox");
-    box.addEventListener("wheel", wheelZoom, {passive:false});
+  const eseaYes=()=>{closePopup("eseaPopupBackdrop");window.open("https://www.youtube.com/watch?v=n1Q5z8xNOTE","_blank");};
+  const eseaNo =()=>{closePopup("eseaPopupBackdrop");window.open("https://www.youtube.com/watch?v=HDaaoQ6h_Xc","_blank");};
 
-    // chiudi popup cliccando fuori
-    document.getElementById("popupBackdrop").addEventListener("click", (e)=>{
-      if(e.target.id === "popupBackdrop") closeFaceitPopup();
+  document.addEventListener("DOMContentLoaded",()=>{
+    imageBox.addEventListener("wheel",wheelZoom,{passive:false});
+    mainImage.addEventListener("dragstart",e=>e.preventDefault());
+    ["faceitPopupBackdrop","eseaPopupBackdrop","doorPopupBackdrop"].forEach(id=>{
+      document.getElementById(id).onclick=e=>{
+        if(e.target.id===id) closePopup(id);
+      };
     });
-
-    // ESC chiude popup
-    document.addEventListener("keydown", (e)=>{
-      if(e.key === "Escape") closeFaceitPopup();
-    });
+    document.onkeydown=e=>{
+      if(e.key==="Escape")
+        ["faceitPopupBackdrop","eseaPopupBackdrop","doorPopupBackdrop"].forEach(closePopup);
+    };
   });
 </script>
 </head>
@@ -297,20 +315,20 @@
 <div class="wrapper">
 
   <div class="links">
-    <button type="button" onclick="showImage('img/mirage.jpg')">INSTA SMOKES PER MIRAGE</button>
+    <button onclick="showImage('img/mirage.jpg')">INSTA SMOKES PER MIRAGE</button>
 
     <div class="dual">
-      <button type="button" onclick="showImage('img/ancient_ct.jpg')">ANCIENT PER CT</button>
-      <button type="button" onclick="showImage('img/ancient_t.jpg')">ANCIENT PER T</button>
+      <button onclick="showImage('img/ancient_ct.jpg')">ANCIENT PER CT</button>
+      <button onclick="showImage('img/ancient_t.jpg')">ANCIENT PER T</button>
     </div>
-	
-	<div class="dual">
-		<button type="button" onclick="showImage('img/train_main.jpg')">Train MAIN</button>
-		<button type="button" onclick="showImage('img/train_nbk.jpg')">Train NBK/CAM</button>
-	</div>
 
-    <button type="button" onclick="showImage('img/inferno.jpg')">INSTA SMOKES PER INFERNO</button>
-    <button type="button" onclick="showImage('img/overpass.jpg')">INSTA SMOKES PER OVERPASS</button>
+    <button onclick="showImage('img/inferno.jpg')">INSTA SMOKES PER INFERNO</button>
+    <button onclick="showImage('img/overpass.jpg')">INSTA SMOKES PER OVERPASS</button>
+
+    <div class="dual">
+      <button onclick="showImage('img/train_main.jpg')">Train MAIN</button>
+      <button onclick="showImage('img/train_nbk.jpg')">Train NBK/CAM</button>
+    </div>
   </div>
 
   <div id="imageBox" class="image-box"
@@ -319,30 +337,56 @@
        onmousemove="drag(event)"
        onmouseup="endDrag()"
        onmouseleave="endDrag()">
-    <img id="mainImage" src="" alt="Insta Smoke" draggable="false">
+    <img id="mainImage" alt="">
   </div>
 
   <div class="hint">
-    Fiore = Level 18 faceit
+    🗣️🗣️🗣️🗣️🗣️🗣️ "Se vuoi andare long ti flasho la smoke" 🗣️🗣️🗣️🗣️🗣️
   </div>
 
   <div class="external">
-    <a href="https://www.google.de" target="_blank" rel="noopener">GUGOL (no AWUPA)</a>
-    <button type="button" onclick="openFaceitPopup()">FEISIT</button>
+    <a href="https://www.google.de" target="_blank">GUGOL</a>
+    <button onclick="openFaceitPopup()">FEISIT</button>
+    <button onclick="openEseapopup()">ESEA</button>
+    <button class="img-button" onclick="openDoorPopup()">
+      <img src="img/door.jpg" alt="door">
+    </button>
   </div>
 
 </div>
 
-<!-- Popup -->
-<div id="popupBackdrop" class="popup-backdrop" aria-hidden="true">
-  <div class="popup" role="dialog" aria-modal="true" aria-label="Conferma Faceit">
-    <img src="img/pain.jpg" alt="pain" draggable="false">
+<!-- FACEIT -->
+<div id="faceitPopupBackdrop" class="popup-backdrop">
+  <div class="popup">
+    <img src="img/pain.jpg">
+    <div class="content"><h3>vuoi aprire veramente feisit?</h3></div>
+    <div class="actions">
+      <button onclick="faceitYes()">JA</button>
+      <button onclick="faceitNo()">NEIN 🇩🇪</button>
+    </div>
+  </div>
+</div>
+
+<!-- ESEA -->
+<div id="eseaPopupBackdrop" class="popup-backdrop">
+  <div class="popup">
+    <img src="img/pende.jpg">
+    <div class="content"><h3>Vuoi andare davvero su ESEA?</h3></div>
+    <div class="actions">
+      <button onclick="eseaYes()">HELL YEA</button>
+      <button onclick="eseaNo()">dude</button>
+    </div>
+  </div>
+</div>
+
+<!-- DOOR -->
+<div id="doorPopupBackdrop" class="popup-backdrop">
+  <div class="popup door-warning">
     <div class="content">
-      <h3>Vuoi aprire veramente feisit? Bro?</h3>
+      <h3>DON'T DESTROY THE DOOR PORCA MAD-</h3>
     </div>
     <div class="actions">
-      <button type="button" onclick="faceitYes()">SÌ</button>
-      <button type="button" onclick="faceitNo()">NO</button>
+      <button onclick="closePopup('doorPopupBackdrop')">SORI BRO (OROSPOCIUCIU)</button>
     </div>
   </div>
 </div>
