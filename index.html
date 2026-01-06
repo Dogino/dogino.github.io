@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Insta Smokes</title>
+<title>Insta Santi</title>
 
 <style>
   body{
@@ -25,7 +25,7 @@
     width:100%;
     margin:10px 0;
     padding:16px;
-    font-size:20px;            /* ↑ testo */
+    font-size:20px;
     font-weight:700;
     background:#1b1b1b;
     color:#fff;
@@ -71,7 +71,7 @@
 
   .hint{
     margin-top:8px;
-    font-size:13px;            /* ↑ */
+    font-size:13px;
     color:#aaa;
   }
 
@@ -88,11 +88,12 @@
     display:inline-flex;
     align-items:center;
     justify-content:center;
-    height:52px;               /* ↑ altezza */
+    height:52px;
     padding:0 18px;
-    font-size:16px;            /* ↑ testo */
+    font-size:16px;
     background:#2a2a2a;
     color:#ddd;
+    text-decoration:none;
     border:0;
     border-radius:6px;
     cursor:pointer;
@@ -103,9 +104,9 @@
     color:#fff;
   }
 
-  /* ===== IMAGE BUTTON (DOOR) ===== */
+  /* ===== IMAGE BUTTONS (DOOR / C4) ===== */
   .img-button{
-    width:64px;                /* ↑ bottone */
+    width:64px;
     height:52px;
     padding:6px;
   }
@@ -149,7 +150,7 @@
   }
   .popup .content h3{
     margin:0 0 14px 0;
-    font-size:20px;            /* ↑ popup text */
+    font-size:20px;
   }
   .popup .actions{
     display:flex;
@@ -162,7 +163,7 @@
     padding:14px 10px;
     border:0;
     border-radius:8px;
-    font-size:16px;            /* ↑ */
+    font-size:16px;
     font-weight:700;
     cursor:pointer;
     background:#2a2a2a;
@@ -189,8 +190,8 @@
     animation: shake 0.45s ease;
   }
 
-  /* ===== DOOR WARNING ===== */
-  .popup.door-warning{
+  /* ===== RED WARNING POPUPS ===== */
+  .popup.red-warning{
     border-color:#ff2b2b;
     box-shadow:0 0 0 1px rgba(255,43,43,.35),
                0 0 40px rgba(0,0,0,.7);
@@ -287,7 +288,10 @@
 
   const openFaceitPopup=()=>openPopup("faceitPopupBackdrop");
   const openEseapopup =()=>openPopup("eseaPopupBackdrop");
-  const openDoorPopup =()=>openPopup("doorPopupBackdrop",true);
+
+  // Red + shake
+  const openDoorPopup  =()=>openPopup("doorPopupBackdrop", true);
+  const openBombPopup  =()=>openPopup("bombPopupBackdrop", true);
 
   const faceitYes=()=>{closePopup("faceitPopupBackdrop");window.open("https://www.faceit.com","_blank");};
   const faceitNo =()=>{closePopup("faceitPopupBackdrop");window.open("https://www.twitch.tv/hitantv","_blank");};
@@ -298,14 +302,16 @@
   document.addEventListener("DOMContentLoaded",()=>{
     imageBox.addEventListener("wheel",wheelZoom,{passive:false});
     mainImage.addEventListener("dragstart",e=>e.preventDefault());
-    ["faceitPopupBackdrop","eseaPopupBackdrop","doorPopupBackdrop"].forEach(id=>{
+
+    ["faceitPopupBackdrop","eseaPopupBackdrop","doorPopupBackdrop","bombPopupBackdrop"].forEach(id=>{
       document.getElementById(id).onclick=e=>{
         if(e.target.id===id) closePopup(id);
       };
     });
+
     document.onkeydown=e=>{
       if(e.key==="Escape")
-        ["faceitPopupBackdrop","eseaPopupBackdrop","doorPopupBackdrop"].forEach(closePopup);
+        ["faceitPopupBackdrop","eseaPopupBackdrop","doorPopupBackdrop","bombPopupBackdrop"].forEach(closePopup);
     };
   });
 </script>
@@ -343,13 +349,26 @@
   <div class="hint">
     🗣️🗣️🗣️🗣️🗣️🗣️ "Se vuoi andare long ti flasho la smoke" 🗣️🗣️🗣️🗣️🗣️
   </div>
+  
+  <div class="hint">
+	🗣️🗣️ FILIPPO STAI DORMENDO FILIPPO???? 🗣️🗣️
+  </div>
+
+  <div class="hint">
+	🗣️🗣️ IO LAVORO CON IL MIO CORPO! 🗣️🗣️
+  </div>
 
   <div class="external">
-    <a href="https://www.google.de" target="_blank">GUGOL</a>
-    <button onclick="openFaceitPopup()">FEISIT</button>
+    <a href="https://www.google.de" target="_blank">GUGLO</a>
+    <button onclick="openFaceitPopup()">FEICIT</button>
     <button onclick="openEseapopup()">ESEA</button>
-    <button class="img-button" onclick="openDoorPopup()">
+
+    <button class="img-button" onclick="openDoorPopup()" title="door">
       <img src="img/door.jpg" alt="door">
+    </button>
+
+    <button class="img-button" onclick="openBombPopup()" title="c4">
+      <img src="img/c4.jpg" alt="c4">
     </button>
   </div>
 
@@ -358,11 +377,11 @@
 <!-- FACEIT -->
 <div id="faceitPopupBackdrop" class="popup-backdrop">
   <div class="popup">
-    <img src="img/pain.jpg">
+    <img src="img/pain.jpg" alt="pain">
     <div class="content"><h3>vuoi aprire veramente feisit?</h3></div>
     <div class="actions">
-      <button onclick="faceitYes()">JA</button>
-      <button onclick="faceitNo()">NEIN 🇩🇪</button>
+      <button onclick="faceitYes()">realPain.jpg</button>
+      <button onclick="faceitNo()">I want to be happy</button>
     </div>
   </div>
 </div>
@@ -370,23 +389,36 @@
 <!-- ESEA -->
 <div id="eseaPopupBackdrop" class="popup-backdrop">
   <div class="popup">
-    <img src="img/pende.jpg">
+    <img src="img/pende.jpg" alt="pende">
     <div class="content"><h3>Vuoi andare davvero su ESEA?</h3></div>
     <div class="actions">
-      <button onclick="eseaYes()">HELL YEA</button>
-      <button onclick="eseaNo()">dude</button>
+      <button onclick="eseaYes()">BROOOO</button>
+      <button onclick="eseaNo()">This aint 2017</button>
     </div>
   </div>
 </div>
 
-<!-- DOOR -->
+<!-- DOOR (red + shake) -->
 <div id="doorPopupBackdrop" class="popup-backdrop">
-  <div class="popup door-warning">
+  <div class="popup red-warning">
     <div class="content">
       <h3>DON'T DESTROY THE DOOR PORCA MAD-</h3>
     </div>
     <div class="actions">
-      <button onclick="closePopup('doorPopupBackdrop')">SORI BRO (OROSPOCIUCIU)</button>
+      <button onclick="closePopup('doorPopupBackdrop')">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- BOMB (red + shake + image + kurwa) -->
+<div id="bombPopupBackdrop" class="popup-backdrop">
+  <div class="popup red-warning">
+    <img src="img/mosconi.jpg" alt="mosconi">
+    <div class="content">
+      <h3>GUYS THE BOMB ON SPAWN PORCO DDDDDDD-</h3>
+    </div>
+    <div class="actions">
+      <button onclick="closePopup('bombPopupBackdrop')">Kurwa</button>
     </div>
   </div>
 </div>
